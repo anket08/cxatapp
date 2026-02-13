@@ -32,7 +32,9 @@ const LandingPage = () => {
     return (
         <div className="landing-root" style={{
             backgroundColor: '#050508',
-            minHeight: '100vh',
+            width: '100vw',
+            height: '100vh',
+            overflowY: 'auto',
             color: '#fff',
             fontFamily: 'Inter, system-ui, sans-serif'
         }}>

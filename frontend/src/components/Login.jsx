@@ -96,7 +96,7 @@ const Login = ({ onLogin }) => {
     return (
         <motion.div
             variants={pageVariants} initial="initial" animate="animate" exit="exit"
-            style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#050508', position: 'relative' }}
+            style={{ width: '100vw', height: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#050508', position: 'relative' }}
         >
             {/* Architectural Grid Background */}
             <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>

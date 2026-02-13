@@ -29,6 +29,9 @@ public class ChatService {
     public Message sendMessage(Message message) {
         return messageRepository.save(message);
     }
+    public boolean roomExists(Long roomId) {
+    return chatRoomRepository.existsById(roomId);
+}
 
     public List<Message> getMessages(Long roomId) {
         return messageRepository.findByRoomIdOrderByCreatedAtAsc(roomId);

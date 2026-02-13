@@ -31,4 +31,8 @@ public class ChatController {
     public List<Message> getMessages(@PathVariable Long roomId) {
         return chatService.getMessages(roomId);
     }
+    @GetMapping("/room/{roomId}/exists")
+public boolean roomExists(@PathVariable Long roomId) {
+    return chatService.roomExists(roomId);
+}
 }

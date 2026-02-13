@@ -37,7 +37,7 @@ function App() {
 
   const [activeRoom, setActiveRoom] = useState(() => {
     const savedRoom = localStorage.getItem('cxat_active_room');
-    return savedRoom ? savedRoom : null;
+    return (savedRoom && savedRoom !== 'null' && savedRoom !== 'undefined') ? savedRoom : null;
   });
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import axios from 'axios';
-import { Send, Hash, Activity, LogOut, User as UserIcon, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Send, Hash, ChevronLeft, User as UserIcon, Shield, Radio } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const Chat = ({ user, activeRoom: propActiveRoom, onLeaveRoom }) => {
@@ -13,292 +13,298 @@ const Chat = ({ user, activeRoom: propActiveRoom, onLeaveRoom }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isConnected, setIsConnected] = useState(false);
-    const [connectionError, setConnectionError] = useState(false);
 
     const stompClientRef = useRef(null);
     const subscriptionRef = useRef(null);
     const messagesEndRef = useRef(null);
 
-    // --- 1. Scroll Logic ---
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // --- 2. WebSocket Connection & Subscription ---
     useEffect(() => {
         if (!activeRoom) return;
-
-        // Cleanup function for previous connection/subscription
-        const cleanup = () => {
-            if (subscriptionRef.current) {
-                subscriptionRef.current.unsubscribe();
-                subscriptionRef.current = null;
-            }
-            if (stompClientRef.current && stompClientRef.current.connected) {
-                stompClientRef.current.disconnect();
-                stompClientRef.current = null;
-                setIsConnected(false);
-            }
-        };
-
-        cleanup(); // Cleanup before starting new connection
-
         const socket = new SockJS('http://localhost:8080/ws');
         const client = Stomp.over(socket);
-        client.debug = () => { }; // Keep console clean
+        client.debug = null;
+        stompClientRef.current = client;
 
         client.connect({}, () => {
             setIsConnected(true);
-            setConnectionError(false);
-            stompClientRef.current = client;
-
-            // Subscribe to the specific room topic
-            subscriptionRef.current = client.subscribe('/topic/messages', (msg) => {
+            subscriptionRef.current = client.subscribe(`/topic/messages/${activeRoom}`, (msg) => {
                 const message = JSON.parse(msg.body);
-                // Ensure message belongs to current room
-                if (String(message.roomId) === String(activeRoom)) {
-                    setMessages((prev) => {
-                        // Avoid duplicates if message ID exists
-                        if (prev.some(m => m.id === message.id)) return prev;
-                        return [...prev, message];
-                    });
-                }
+                setMessages(prev => prev.some(m => m.id === message.id) ? prev : [...prev, message]);
             });
-
-            // Fetch history *after* connection established
             fetchHistory(activeRoom);
+        }, () => setIsConnected(false));
 
-        }, (error) => {
-            console.error("Connection Error:", error);
-            setIsConnected(false);
-            setConnectionError(true);
-            // Simple retry logic could go here, but avoiding complex polling
-        });
-
-        return cleanup;
-    }, [activeRoom]); // Re-run effect when activeRoom changes
-
-    // --- 3. History Fetching ---
-    const fetchHistory = async (roomId) => {
-        try {
-            const res = await axios.get(`http://localhost:8080/chat/messages/${roomId}`);
-            if (Array.isArray(res.data)) {
-                setMessages(res.data);
-            }
-        } catch (err) {
-            console.error("History fetch failed:", err);
-        }
-    };
-
-    // --- 4. Send Message ---
-    const sendMessage = () => {
-        if (!input.trim() || !activeRoom || !isConnected || !stompClientRef.current) return;
-
-        const messagePayload = {
-            roomId: parseInt(activeRoom, 10), // Ensure number format if backend expects Long
-            senderId: user.id,
-            content: input.trim()
+        return () => {
+            if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
+            if (client && client.connected) client.disconnect();
         };
+    }, [activeRoom]);
 
+    const fetchHistory = async (id) => {
         try {
-            stompClientRef.current.send("/app/chat", {}, JSON.stringify(messagePayload));
-            setInput('');
-        } catch (error) {
-            console.error("Send failed:", error);
-        }
+            const res = await axios.get(`http://localhost:8080/chat/messages/${id}`);
+            if (Array.isArray(res.data)) setMessages(res.data);
+        } catch (err) { console.error(err); }
     };
 
-    const handleLeave = () => {
-        if (onLeaveRoom) onLeaveRoom();
-        navigate('/lobby');
+    const sendMessage = () => {
+        if (!input.trim() || !isConnected) return;
+        const payload = { roomId: parseInt(activeRoom), senderId: user.id, content: input.trim() };
+        stompClientRef.current.send("/app/chat", {}, JSON.stringify(payload));
+        setInput('');
     };
 
     return (
-        <div className="landing-hero" style={{ position: 'fixed', zIndex: 50, overflow: 'hidden' }}>
-            <div className="animated-gradient-bg"></div>
-            <div className="floating-orb orb-1"></div>
-            <div className="floating-orb orb-2"></div>
+        <div className="chat-container-main">
+            <style>{`
+                @keyframes orbit {
+                    0% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(30px, -50px) scale(1.2); }
+                    66% { transform: translate(-20px, 20px) scale(0.9); }
+                    100% { transform: translate(0, 0) scale(1); }
+                }
 
-            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)`, backgroundSize: '60px 60px' }}></div>
+                .chat-container-main {
+                    position: fixed;
+                    inset: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: #050505;
+                    color: white;
+                    font-family: 'Inter', sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+
+                /* Animated Background Blobs */
+                .bg-animate {
+                    position: absolute;
+                    inset: 0;
+                    z-index: 0;
+                    overflow: hidden;
+                    pointer-events: none;
+                }
+                .blob {
+                    position: absolute;
+                    width: 500px;
+                    height: 500px;
+                    border-radius: 50%;
+                    filter: blur(120px);
+                    opacity: 0.15;
+                    animation: orbit 20s infinite ease-in-out;
+                }
+                .blob-1 { background: #7000ff; top: -10%; left: -10%; }
+                .blob-2 { background: #00f2ff; bottom: -10%; right: -10%; animation-delay: -5s; }
+
+                /* Header Alignment Fixed */
+                .chat-header {
+                    position: relative;
+                    z-index: 10;
+                    height: 70px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0 25px;
+                    background: rgba(0,0,0,0.6);
+                    backdrop-filter: blur(15px);
+                    border-bottom: 1px solid rgba(255,255,255,0.08);
+                }
+
+                .header-left { 
+                    display: flex; 
+                    align-items: center; 
+                    gap: 15px; 
+                }
+
+                .header-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                }
+
+                .room-info { 
+                    display: flex; 
+                    flex-direction: column;
+                    justify-content: center;
+                }
+
+                .back-btn { 
+                    background: #1a1a1a; 
+                    border: none; 
+                    color: white; 
+                    border-radius: 8px; 
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer; 
+                }
+                
+                /* Messages Area */
+                .messages-view {
+                    flex: 1;
+                    position: relative;
+                    z-index: 5;
+                    overflow-y: auto;
+                    padding: 20px 5%;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                    scrollbar-width: none;
+                }
+
+                .msg-box {
+                    max-width: 60%;
+                    padding: 12px 18px;
+                    border-radius: 12px;
+                    font-size: 0.95rem;
+                    line-height: 1.5;
+                }
+                .msg-box.me {
+                    align-self: flex-end;
+                    background: #6200ea;
+                    box-shadow: 0 4px 15px rgba(98, 0, 234, 0.3);
+                }
+                .msg-box.other {
+                    align-self: flex-start;
+                    background: rgba(255, 255, 255, 0.05);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+
+                /* Translucent Bottom Bar */
+                .chat-footer {
+                    position: relative;
+                    z-index: 10;
+                    padding: 30px 5%;
+                    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+                }
+
+                .input-wrapper {
+                    background: rgba(20, 20, 20, 0.6);
+                    backdrop-filter: blur(25px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 50px;
+                    display: flex;
+                    align-items: center;
+                    padding: 8px 10px 8px 25px;
+                    max-width: 900px;
+                    margin: 0 auto;
+                    transition: 0.3s;
+                }
+                .input-wrapper:focus-within {
+                    border-color: #00f2ff;
+                    box-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+                }
+
+                .input-wrapper input {
+                    flex: 1;
+                    background: transparent;
+                    border: none;
+                    color: white;
+                    outline: none;
+                    font-size: 1rem;
+                }
+
+                .send-btn {
+                    background: rgba(255,255,255,0.1);
+                    color: white;
+                    border: none;
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: 0.2s;
+                }
+                .send-btn:hover { background: #00f2ff; color: black; transform: scale(1.05); }
+
+                .meta-text {
+                    text-align: center;
+                    font-size: 0.6rem;
+                    color: rgba(255,255,255,0.3);
+                    margin-top: 15px;
+                    letter-spacing: 2px;
+                }
+            `}</style>
+
+            <div className="bg-animate">
+                <div className="blob blob-1"></div>
+                <div className="blob blob-2"></div>
             </div>
 
-            <div className="chat-root" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', position: 'relative', zIndex: 10 }}>
-                <div
-                    className="chat-container"
-                    style={{
-                        maxWidth: '1200px',
-                        height: '90vh',
-                        background: 'rgba(10, 10, 10, 0.7)',
-                        backdropFilter: 'blur(30px)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        boxShadow: '0 40px 80px -20px rgba(0, 0, 0, 0.8)',
-                        borderRadius: '24px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden'
-                    }}
-                >
-                    {/* Header */}
-                    <header className="chat-header" style={{ background: 'rgba(255,255,255,0.02)', padding: '20px 30px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            <button
-                                className="icon-btn exit-btn"
-                                onClick={handleLeave}
-                                style={{
-                                    background: 'transparent',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    color: '#fff',
-                                    padding: '8px 16px',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    fontSize: '0.8rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <ChevronLeft size={16} /> EXIT_CHANNEL
-                            </button>
-                            <div className="room-info" style={{ display: 'flex', flexDirection: 'column' }}>
-                                <div className="room-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem', fontWeight: 'bold', color: '#fff' }}>
-                                    <Hash size={20} style={{ color: '#00f2ff' }} />
-                                    <span>FREQUENCY_{activeRoom}</span>
-                                </div>
-                                <div className="status-indicator" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.7rem', color: isConnected ? '#00ff95' : '#ff4b4b' }}>
-                                    <div className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: isConnected ? '#00ff95' : '#ff4b4b', boxShadow: isConnected ? '0 0 8px #00ff95' : 'none' }}></div>
-                                    <span>{isConnected ? 'UPLINK_STABLE' : 'SEARCHING_NETWORK...'}</span>
-                                </div>
-                            </div>
+            <header className="chat-header">
+                <div className="header-left">
+                    <button className="back-btn" onClick={() => navigate('/lobby')}>
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div className="room-info">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1rem', fontWeight: 'bold' }}>
+                            <Hash size={18} color="#00f2ff" /> CHANNEL_{activeRoom}
                         </div>
-                        <div className="header-right" style={{ display: 'flex', gap: '15px' }}>
-                            {connectionError && (
-                                <div style={{ color: '#ff4b4b', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem' }}>
-                                    <AlertCircle size={16} /> CONNECTION_REFUSED
-                                </div>
-                            )}
-                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '50%' }}>
-                                <Activity size={20} color="#00f2ff" />
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* Messages Feed */}
-                    <div className="chat-viewport" style={{ flex: 1, overflowY: 'auto', padding: '30px', display: 'flex', flexDirection: 'column' }}>
-                        <div className="messages-feed" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {messages.map((msg, idx) => {
-                                const isMe = String(msg.senderId) === String(user.id);
-                                return (
-                                    <div
-                                        key={msg.id || idx}
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: isMe ? 'flex-end' : 'flex-start',
-                                            width: '100%'
-                                        }}
-                                    >
-                                        <div style={{
-                                            maxWidth: '70%',
-                                            display: 'flex',
-                                            flexDirection: isMe ? 'row-reverse' : 'row',
-                                            gap: '12px'
-                                        }}>
-                                            {!isMe && (
-                                                <div style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    borderRadius: '50%',
-                                                    background: 'rgba(255,255,255,0.1)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    border: '1px solid rgba(255,255,255,0.1)'
-                                                }}>
-                                                    <UserIcon size={14} color="#fff" />
-                                                </div>
-                                            )}
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                                                {!isMe && <span style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', marginLeft: '4px' }}>USER_{msg.senderId}</span>}
-                                                <div style={{
-                                                    padding: '12px 18px',
-                                                    borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                                    background: isMe ? 'linear-gradient(135deg, #00f2ff, #00a8ff)' : 'rgba(255,255,255,0.05)',
-                                                    color: isMe ? '#000' : '#fff',
-                                                    fontSize: '0.95rem',
-                                                    lineHeight: '1.5',
-                                                    border: isMe ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                                                    boxShadow: isMe ? '0 4px 15px rgba(0, 242, 255, 0.3)' : 'none'
-                                                }}>
-                                                    {msg.content}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {messages.length === 0 && (
-                                <div className="empty-state" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3, marginTop: '50px' }}>
-                                    <div style={{ fontSize: '4rem', fontWeight: '900', color: '#fff', letterSpacing: '-5px' }}>NULL</div>
-                                    <p style={{ letterSpacing: '4px', fontSize: '0.8rem', marginTop: '10px' }}>NO_DATA_TRANSMISSIONS</p>
-                                </div>
-                            )}
-                            <div ref={messagesEndRef} />
-                        </div>
-                    </div>
-
-                    {/* Input Area */}
-                    <div className="chat-input-area" style={{ padding: '20px 30px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div className="input-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                                placeholder="TYPE_MESSAGE..."
-                                disabled={!isConnected}
-                                style={{
-                                    width: '100%',
-                                    background: 'rgba(255,255,255,0.03)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    padding: '16px 60px 16px 20px',
-                                    borderRadius: '12px',
-                                    color: '#fff',
-                                    outline: 'none',
-                                    fontSize: '0.95rem',
-                                    fontFamily: 'inherit'
-                                }}
-                            />
-                            <button
-                                className={`send-trigger ${input.trim() ? 'active' : ''}`}
-                                onClick={sendMessage}
-                                disabled={!isConnected || !input.trim()}
-                                style={{
-                                    position: 'absolute',
-                                    right: '8px',
-                                    background: input.trim() ? '#00f2ff' : 'transparent',
-                                    color: input.trim() ? '#000' : 'rgba(255,255,255,0.2)',
-                                    border: 'none',
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: input.trim() ? 'pointer' : 'default',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <Send size={18} />
-                            </button>
-                        </div>
-                        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)' }}>
-                            PRESS ENTER TO TRANSMIT - ENCRYPTED CHANNEL
+                        <div style={{ fontSize: '0.65rem', color: '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <div style={{ width: 4, height: 4, background: '#00ff88', borderRadius: '50%' }} /> ENCRYPTED LINK ACTIVE
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <div className="header-right">
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '700', lineHeight: 1 }}>{user.id}</div>
+                        <div style={{ fontSize: '0.6rem', color: '#00f2ff', marginTop: '2px' }}>LEVEL_01_USER</div>
+                    </div>
+                    <div style={{ background: '#6200ea', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}>
+                        <UserIcon size={20} />
+                    </div>
+                </div>
+            </header>
+
+            <main className="messages-view">
+                {messages.length === 0 && (
+                    <div style={{ margin: 'auto', textAlign: 'center', opacity: 0.2 }}>
+                        <Radio size={48} />
+                        <p style={{ marginTop: '10px' }}>WAITING FOR SIGNAL...</p>
+                    </div>
+                )}
+                {messages.map((msg, idx) => {
+                    const isMe = String(msg.senderId) === String(user.id);
+                    return (
+                        <div key={msg.id || idx} className={`msg-box ${isMe ? 'me' : 'other'}`}>
+                            {!isMe && <div style={{ fontSize: '0.6rem', color: '#00f2ff', marginBottom: '4px' }}>USER_{msg.senderId}</div>}
+                            {msg.content}
+                        </div>
+                    );
+                })}
+                <div ref={messagesEndRef} />
+            </main>
+
+            <footer className="chat-footer">
+                <div className="input-wrapper">
+                    <input
+                        type="text"
+                        placeholder="Secure transmission..."
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                        disabled={!isConnected}
+                    />
+                    <button className="send-btn" onClick={sendMessage} disabled={!input.trim()}>
+                        <Send size={18} />
+                    </button>
+                </div>
+                <div className="meta-text">
+                    S3CURE // THROUGH // PORT 8080
+                </div>
+            </footer>
         </div>
     );
 };

@@ -72,7 +72,7 @@ const ProfileDashboard = () => {
     };
 
     return (
-        <div className="landing-hero" style={{ overflowY: 'auto', paddingBottom: '50px' }}>
+        <div className="landing-hero" style={{ width: '100vw', height: '100vh', overflowY: 'auto', paddingBottom: '50px', position: 'relative' }}>
             {/* Animated Background Gradient */}
             <div className="animated-gradient-bg"></div>
 

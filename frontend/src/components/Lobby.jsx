@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Plus, Link, LogOut, ShieldCheck, Zap, User, Crosshair } from 'lucide-react';
+import { Plus, Link, LogOut, ShieldCheck, Zap, User, Crosshair, Settings, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Lobby = ({ user, onJoinRoom, onLogout }) => {
@@ -9,221 +9,234 @@ const Lobby = ({ user, onJoinRoom, onLogout }) => {
     const [roomId, setRoomId] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // --- Create Room Logic ---
     const handleCreateRoom = async () => {
         setLoading(true);
         try {
             const res = await axios.post('http://localhost:8080/chat/room');
-            onJoinRoom(res.data.id);
-            navigate(`/chat/${res.data.id}`);
+            if (res.data && res.data.id) {
+                onJoinRoom(res.data.id);
+                navigate(`/chat/${res.data.id}`);
+            }
         } catch (err) {
-            alert("Terminal Error: Backend connection failed.");
-            console.error(err);
+            console.error("Terminal Error:", err);
+            alert("Backend Connection Failed. Check if server is running on port 8080.");
         } finally {
             setLoading(false);
         }
     };
 
+    // --- Join Room Logic (FIXED) ---
+    const handleJoinRoom = () => {
+        if (roomId.trim()) {
+            onJoinRoom(roomId.trim());
+            navigate(`/chat/${roomId.trim()}`);
+        } else {
+            alert("Please enter a valid Frequency ID");
+        }
+    };
+
     return (
-        <div className="landing-hero" style={{ overflow: 'hidden' }}>
-            {/* Animated Background Gradient */}
-            <div className="animated-gradient-bg"></div>
+        <div className="lobby-root">
+            <style>{`
+                @keyframes orbit {
+                    0% { transform: translate(0, 0) scale(1); }
+                    50% { transform: translate(50px, -30px) scale(1.1); }
+                    100% { transform: translate(0, 0) scale(1); }
+                }
 
-            {/* Floating Orbs */}
-            <div className="floating-orb orb-1"></div>
-            <div className="floating-orb orb-2"></div>
-            <div className="floating-orb orb-3"></div>
+                .lobby-root {
+                    position: fixed;
+                    inset: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: #050505;
+                    color: white;
+                    font-family: 'Inter', sans-serif;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
 
-            {/* Architectural Grid Background */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)`, backgroundSize: '60px 60px' }}></div>
+                /* Animated Background Elements */
+                .bg-elements { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+                .grid-layer {
+                    position: absolute; inset: 0;
+                    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
+                                      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+                    background-size: 50px 50px;
+                }
+                .orb {
+                    position: absolute; width: 600px; height: 600px; border-radius: 50%;
+                    filter: blur(140px); opacity: 0.15; animation: orbit 20s infinite ease-in-out;
+                }
+                .orb-1 { background: #00f2ff; top: -10%; left: -10%; }
+                .orb-2 { background: #7000ff; bottom: -10%; right: -10%; animation-delay: -5s; }
+
+                /* Header Styling */
+                .lobby-nav {
+                    position: relative; z-index: 10; height: 85px;
+                    display: flex; align-items: center; justify-content: space-between;
+                    padding: 0 40px; background: rgba(0,0,0,0.4);
+                    backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.08);
+                }
+                .brand-section { display: flex; align-items: center; gap: 15px; }
+                .logo-box { background: rgba(0,242,255,0.1); padding: 10px; border-radius: 12px; border: 1px solid rgba(0,242,255,0.2); }
+                
+                .user-plate {
+                    display: flex; align-items: center; gap: 15px;
+                    background: rgba(255,255,255,0.03); padding: 8px 15px;
+                    border-radius: 50px; border: 1px solid rgba(255,255,255,0.05);
+                }
+                .avatar { 
+                    width: 35px; height: 35px; background: #6200ea; 
+                    border-radius: 50%; display: flex; align-items: center; 
+                    justify-content: center; font-weight: bold; border: 2px solid rgba(255,255,255,0.1);
+                }
+
+                .exit-btn {
+                    background: transparent; border: none; color: #ff4b4b;
+                    font-size: 0.75rem; font-weight: 800; cursor: pointer;
+                    display: flex; align-items: center; gap: 5px; margin-left: 10px;
+                }
+
+                /* Main Content Layout */
+                .lobby-main {
+                    flex: 1; z-index: 5; display: flex; align-items: center;
+                    justify-content: center; padding: 0 5%; gap: 30px;
+                }
+
+                .card {
+                    flex: 1; max-width: 380px; height: 450px;
+                    background: rgba(20, 20, 25, 0.6);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 24px; padding: 40px 30px;
+                    display: flex; flex-direction: column; align-items: center;
+                    text-align: center; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .card:hover { 
+                    transform: translateY(-10px); 
+                    border-color: rgba(0,242,255,0.4);
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+                }
+
+                .card-icon-wrap {
+                    width: 70px; height: 70px; border-radius: 20px;
+                    display: flex; align-items: center; justify-content: center;
+                    margin-bottom: 25px; font-size: 1.5rem;
+                }
+
+                .h3-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 15px; letter-spacing: -0.5px; }
+                .p-desc { color: rgba(255,255,255,0.4); font-size: 0.9rem; line-height: 1.6; margin-bottom: auto; }
+
+                /* Action Elements */
+                .primary-btn {
+                    width: 100%; height: 55px; border-radius: 15px; border: none;
+                    background: #00f2ff; color: #000; font-weight: 800;
+                    letter-spacing: 1px; cursor: pointer; transition: 0.3s;
+                    display: flex; align-items: center; justify-content: center; gap: 10px;
+                }
+                .primary-btn:hover:not(:disabled) { 
+                    background: #fff; box-shadow: 0 0 25px rgba(0,242,255,0.5); 
+                    transform: scale(1.02);
+                }
+
+                .join-input {
+                    width: 100%; height: 55px; background: rgba(0,0,0,0.3);
+                    border: 1px solid rgba(255,255,255,0.1); border-radius: 15px;
+                    padding: 0 20px; color: white; text-align: center;
+                    font-family: 'Monaco', monospace; margin-bottom: 12px; outline: none;
+                }
+
+                .connect-btn {
+                    width: 100%; height: 45px; border: 1px solid #7000ff;
+                    background: rgba(112, 0, 255, 0.1); color: #7000ff;
+                    border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
+                }
+                .connect-btn:hover { background: #7000ff; color: white; }
+
+                .lobby-footer {
+                    height: 60px; display: flex; align-items: center; justify-content: center;
+                    gap: 30px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05);
+                }
+                .status-tag { font-size: 0.65rem; color: rgba(255,255,255,0.3); letter-spacing: 2px; display: flex; align-items: center; gap: 8px; }
+            `}</style>
+
+            <div className="bg-elements">
+                <div className="grid-layer" />
+                <div className="orb orb-1" />
+                <div className="orb orb-2" />
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="ship-container"
-                style={{ maxWidth: '1000px', width: '90%', flexDirection: 'column', position: 'relative', zIndex: 10, padding: '40px' }}
-            >
-                <header className="lobby-header-ui" style={{ width: '100%', marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ background: 'rgba(0, 242, 255, 0.1)', padding: '8px', borderRadius: '8px' }}>
-                            <Zap className="neon-icon" size={24} style={{ color: '#00f2ff' }} />
-                        </div>
-                        <div>
-                            <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, letterSpacing: '-0.5px' }}>cXat <span className="v-tag" style={{ fontSize: '0.6rem', background: '#00f2ff', color: '#000', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle' }}>v2.0</span></h1>
-                            <span style={{ fontSize: '0.75rem', color: '#666', letterSpacing: '2px' }}>SECURE_UPLINK_ESTABLISHED</span>
+            {/* Header */}
+            <header className="lobby-nav">
+                <div className="brand-section">
+                    <div className="logo-box"><Zap size={22} color="#00f2ff" /></div>
+                    <div>
+                        <h1 style={{ fontSize: '1.2rem', fontWeight: '900', margin: 0 }}>cXat <span style={{ color: '#6200ea', fontSize: '0.7rem' }}>V2.0</span></h1>
+                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', margin: 0 }}>SECURE_UPLINK_ESTABLISHED</p>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div className="user-plate" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
+                        <div className="avatar">{user?.username?.charAt(0).toUpperCase() || 'U'}</div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{user?.username || 'Pilot'}</span>
+                            <span style={{ fontSize: '0.55rem', color: '#00ff88' }}>OPERATOR_ACTIVE</span>
                         </div>
                     </div>
+                    <button className="exit-btn" onClick={onLogout}><LogOut size={14} /> EXIT</button>
+                </div>
+            </header>
 
-                    <div className="user-profile-plate" style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'rgba(255,255,255,0.03)', padding: '8px 16px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => navigate('/profile')}>
-                            <div className="avatar-ring" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #00f2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div className="avatar-core" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
-                                    {user.username.charAt(0).toUpperCase()}
-                                </div>
-                            </div>
-                            <div className="user-meta" style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span className="u-name" style={{ fontSize: '0.9rem', fontWeight: '700' }}>{user.username}</span>
-                                <span className="u-status" style={{ fontSize: '0.65rem', color: '#00ff95', letterSpacing: '1px' }}>OPERATOR</span>
-                            </div>
-                        </div>
-                        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' }}></div>
-                        <button className="exit-trigger" onClick={onLogout} title="De-authorize" style={{ background: 'transparent', border: 'none', color: '#ff4b4b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: '600' }}>
-                            <LogOut size={16} /> EXIT
-                        </button>
+            {/* Main Action Hub */}
+            <main className="lobby-main">
+                {/* Generate Card */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card">
+                    <div className="card-icon-wrap" style={{ background: 'rgba(0,242,255,0.1)', color: '#00f2ff' }}><Plus size={32} /></div>
+                    <h3 className="h3-title">Generate Frequency</h3>
+                    <p className="p-desc">Initialize a new end-to-end encrypted communication channel. Coordinates will be broadcasted to your HUD.</p>
+                    <button className="primary-btn" onClick={handleCreateRoom} disabled={loading}>
+                        {loading ? 'SYNCING...' : <>INITIALIZE <Crosshair size={18} /></>}
+                    </button>
+                </motion.div>
+
+                {/* Sync Card - FIXED JOIN LOGIC */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card">
+                    <div className="card-icon-wrap" style={{ background: 'rgba(112,0,255,0.1)', color: '#7000ff' }}><Link size={32} /></div>
+                    <h3 className="h3-title">Sync Frequency</h3>
+                    <p className="p-desc">Enter existing channel coordinates to intercept transmissions and join the secure network.</p>
+                    <input
+                        className="join-input"
+                        placeholder="FREQUENCY_ID"
+                        value={roomId}
+                        onChange={(e) => setRoomId(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleJoinRoom()}
+                    />
+                    <button className="connect-btn" onClick={handleJoinRoom}>
+                        ESTABLISH CONNECTION
+                    </button>
+                </motion.div>
+
+                {/* Pilot Card */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
+                    <div className="card-icon-wrap" style={{ background: 'rgba(255,75,75,0.1)', color: '#ff4b4b' }}><User size={32} /></div>
+                    <h3 className="h3-title">Pilot Profile</h3>
+                    <p className="p-desc">Access your mission logs, communication stats, and personalize your pilot configuration settings.</p>
+                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '8px', color: '#ff4b4b', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                        ACCESS SECURE DATA <Settings size={14} />
                     </div>
-                </header>
+                </motion.div>
+            </main>
 
-                <main className="lobby-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', width: '100%' }}>
-                    {/* Create Room Card */}
-                    <motion.div
-                        whileHover={{ y: -5, borderColor: 'rgba(0, 242, 255, 0.4)' }}
-                        className="action-card highlight"
-                        style={{
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            background: 'rgba(255, 255, 255, 0.02)',
-                            padding: '2rem',
-                            borderRadius: '20px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.5rem',
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        <div className="card-icon" style={{ background: 'rgba(0, 242, 255, 0.1)', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00f2ff' }}>
-                            <Plus size={24} />
-                        </div>
-                        <div className="card-content">
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.5rem' }}>Generate Frequency</h3>
-                            <p style={{ color: '#888', fontSize: '0.9rem', lineHeight: '1.6' }}>Initialize a new encrypted communication channel. Coordinates will be generated automatically.</p>
-                        </div>
-                        <button
-                            className="action-btn primary"
-                            onClick={handleCreateRoom}
-                            disabled={loading}
-                            style={{
-                                marginTop: 'auto',
-                                background: '#fff',
-                                color: '#000',
-                                border: 'none',
-                                padding: '12px',
-                                borderRadius: '10px',
-                                fontWeight: '700',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px'
-                            }}
-                        >
-                            {loading ? 'SIGNALING...' : <>INITIALIZE <Crosshair size={16} /></>}
-                        </button>
-                    </motion.div>
-
-                    {/* Join Room Card */}
-                    <motion.div
-                        whileHover={{ y: -5, borderColor: 'rgba(112, 0, 255, 0.4)' }}
-                        className="action-card"
-                        style={{
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            background: 'rgba(255, 255, 255, 0.02)',
-                            padding: '2rem',
-                            borderRadius: '20px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.5rem',
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        <div className="card-icon" style={{ background: 'rgba(112, 0, 255, 0.1)', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7000ff' }}>
-                            <Link size={24} />
-                        </div>
-                        <div className="card-content">
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.5rem' }}>Sync Frequency</h3>
-                            <p style={{ color: '#888', fontSize: '0.9rem', lineHeight: '1.6' }}>Enter existing channel coordinates to intercept transmission.</p>
-                        </div>
-                        <div className="join-group" style={{ marginTop: 'auto', display: 'flex', gap: '10px' }}>
-                            <input
-                                type="text"
-                                placeholder="CHANNEL_ID"
-                                value={roomId}
-                                onChange={(e) => setRoomId(e.target.value)}
-                                style={{
-                                    flex: 1,
-                                    background: 'rgba(0,0,0,0.3)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    padding: '12px',
-                                    borderRadius: '10px',
-                                    color: '#fff',
-                                    outline: 'none',
-                                    fontFamily: 'monospace'
-                                }}
-                            />
-                            <button
-                                className="action-btn secondary"
-                                onClick={() => {
-                                    if (roomId) {
-                                        onJoinRoom(roomId);
-                                        navigate(`/chat/${roomId}`);
-                                    }
-                                }}
-                                style={{
-                                    background: 'rgba(255,255,255,0.1)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    color: '#fff',
-                                    padding: '0 20px',
-                                    borderRadius: '10px',
-                                    fontWeight: '700',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                CONNECT
-                            </button>
-                        </div>
-                    </motion.div>
-
-                    {/* Profile Card Shortcut */}
-                    <motion.div
-                        whileHover={{ y: -5, borderColor: 'rgba(255, 75, 75, 0.4)' }}
-                        className="action-card"
-                        style={{
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            background: 'rgba(255, 255, 255, 0.02)',
-                            padding: '2rem',
-                            borderRadius: '20px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.5rem',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer'
-                        }}
-                        onClick={() => navigate('/profile')}
-                    >
-                        <div className="card-icon" style={{ background: 'rgba(255, 75, 75, 0.1)', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff4b4b' }}>
-                            <User size={24} />
-                        </div>
-                        <div className="card-content">
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.5rem' }}>Pilot Profile</h3>
-                            <p style={{ color: '#888', fontSize: '0.9rem', lineHeight: '1.6' }}>Access your mission logs, stats, and personal configuration.</p>
-                        </div>
-                        <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '8px', color: '#ff4b4b', fontSize: '0.8rem', fontWeight: '700' }}>
-                            ACCESS DATA <div style={{ width: '4px', height: '4px', background: 'currentColor', borderRadius: '50%' }}></div>
-                        </div>
-                    </motion.div>
-                </main>
-
-                <footer className="lobby-status-footer" style={{ marginTop: '3rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', width: '100%', display: 'flex', justifyContent: 'space-between', opacity: 0.6 }}>
-                    <div className="status-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-                        <ShieldCheck size={14} style={{ color: '#00ff95' }} />
-                        <span>ENCRYPTION: AES-256 ACTIVE</span>
-                    </div>
-                    <div className="status-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-                        <div className="live-dot" style={{ width: '6px', height: '6px', background: '#00f2ff', borderRadius: '50%', boxShadow: '0 0 5px #00f2ff' }}></div>
-                        <span>CORE: NOMINAL</span>
-                    </div>
-                </footer>
-            </motion.div>
+            {/* Footer */}
+            <footer className="lobby-footer">
+                <div className="status-tag"><ShieldCheck size={14} color="#00ff88" /> ENCRYPTION: AES-256 ACTIVE</div>
+                <div className="status-tag"><Activity size={14} color="#00f2ff" /> SYSTEM_CORE: NOMINAL</div>
+                <div className="status-tag" style={{ color: 'rgba(255,255,255,0.1)' }}>STRLNK_v4.4.0</div>
+            </footer>
         </div>
     );
 };
