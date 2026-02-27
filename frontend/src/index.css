@@ -54,22 +54,24 @@ select {
   font-family: inherit;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Glowing Blue Theme */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-base);
+  border-left: 1px solid var(--glass-border);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(to bottom, transparent, var(--accent-primary), var(--accent-secondary));
   border-radius: 10px;
+  box-shadow: 0 0 10px var(--accent-primary), 0 0 20px var(--accent-secondary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(to bottom, transparent, #a5d6ff, #e2c5ff);
 }
 
 /* Global Navbar */
@@ -211,5 +213,32 @@ select {
 .gradient-text {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Chat Background Pattern */
+.chat-background-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/paw-pattern.svg');
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 0;
+  animation: bg-drift 120s linear infinite;
+}
+
+@keyframes bg-drift {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 720px 720px;
+  }
 }

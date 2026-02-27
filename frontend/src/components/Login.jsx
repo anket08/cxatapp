@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Atom } from 'react-loading-indicators';
 import { User, Lock, Mail, ArrowRight, ChevronLeft, PawPrint } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const passedUsername = location.state?.username || '';
+
     const [isRegistering, setIsRegistering] = useState(false);
-    const [formData, setFormData] = useState({ username: '', password: '', email: '' });
+    const [formData, setFormData] = useState({ username: passedUsername, password: '', email: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -105,13 +108,29 @@ const Login = ({ onLogin }) => {
                 </button>
 
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <motion.div
-                        initial={{ scale: 1 }}
-                        animate={{ rotate: [0, -10, 10, -10, 10, 0], scale: [1, 1.1, 1, 1.1, 1] }}
-                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                        style={{ width: '48px', height: '48px', background: '#d97736', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-                        <PawPrint size={28} color="#000" />
-                    </motion.div>
+                    <div
+                        style={{ margin: '0 auto 1.5rem', display: 'flex', justifyContent: 'center' }}
+                    >
+                        <motion.div
+                            animate={{
+                                filter: [
+                                    "drop-shadow(0px 0px 0px rgba(0,255,255,0))",
+                                    "drop-shadow(3px 0px 0px rgba(0,255,255,0.8)) drop-shadow(-3px 0px 0px rgba(255,0,255,0.8))",
+                                    "drop-shadow(-3px 0px 0px rgba(0,255,255,0.8)) drop-shadow(3px 0px 0px rgba(255,0,255,0.8))",
+                                    "drop-shadow(4px -2px 0px rgba(0,255,255,0.8)) drop-shadow(-4px 2px 0px rgba(255,0,255,0.8))",
+                                    "drop-shadow(0px 0px 0px rgba(0,255,255,0))"
+                                ]
+                            }}
+                            transition={{
+                                duration: 0.2,
+                                repeat: Infinity,
+                                repeatType: "mirror",
+                                repeatDelay: Math.random() * 2 + 1 // random delay between 1-3 seconds
+                            }}
+                        >
+                            <PawPrint size={48} color="#79c0ff" />
+                        </motion.div>
+                    </div>
                     <h1 style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '0.5rem' }}>
                         {isRegistering ? 'Create an account' : 'Welcome back'}
                     </h1>

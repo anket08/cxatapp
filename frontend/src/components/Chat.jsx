@@ -99,10 +99,26 @@ const Chat = ({ user, activeRoom: propActiveRoom, onLeaveRoom }) => {
         <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', zIndex: 999 }}>
 
             {/* Background Details */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}></div>
+            <div className="chat-background-pattern"></div>
+            <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 50%, transparent 0%, var(--bg-base) 100%)' }}></div>
 
             {/* Chat Header */}
-            <header style={{ position: 'relative', zIndex: 10, height: '75px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', background: 'rgba(10, 10, 15, 0.7)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--glass-border)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            <header style={{
+                position: 'relative',
+                zIndex: 10,
+                height: '75px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 2rem',
+                margin: '1.5rem 5%', /* Makes it float instead of touching edges */
+                borderRadius: '30px', /* Rounded corners for glassmorphism */
+                background: 'rgba(13, 17, 23, 0.15)', /* More translucent background */
+                backdropFilter: 'blur(35px)', /* Stronger blur */
+                WebkitBackdropFilter: 'blur(35px)',
+                border: '1px solid rgba(255, 255, 255, 0.08)', /* Subtle bright edge */
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)' /* Soft floating shadow */
+            }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button
                         onClick={() => { if (onLeaveRoom) onLeaveRoom(); navigate('/lobby'); }}
@@ -168,14 +184,15 @@ const Chat = ({ user, activeRoom: propActiveRoom, onLeaveRoom }) => {
                                 <div style={{
                                     padding: '14px 18px',
                                     borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                                    background: isMe ? 'linear-gradient(135deg, var(--accent-primary), #00a8ff)' : 'rgba(255,255,255,0.05)',
+                                    background: isMe ? 'linear-gradient(135deg, var(--accent-primary), #00a8ff)' : 'rgba(13, 17, 23, 0.45)', // Blend color
                                     color: isMe ? '#000' : 'var(--text-main)',
-                                    border: isMe ? 'none' : '1px solid var(--glass-border)',
-                                    boxShadow: isMe ? '0 8px 25px rgba(0, 242, 255, 0.25)' : '0 4px 15px rgba(0,0,0,0.2)',
+                                    border: isMe ? 'none' : '1px solid rgba(255, 255, 255, 0.05)', // Extremely faint white highlight only, no black
+                                    boxShadow: isMe ? '0 8px 25px rgba(0, 242, 255, 0.25)' : '0 4px 15px rgba(0,0,0,0.15)',
                                     fontSize: '0.95rem',
                                     lineHeight: '1.5',
                                     position: 'relative',
-                                    backdropFilter: isMe ? 'none' : 'blur(10px)'
+                                    backdropFilter: isMe ? 'none' : 'blur(25px)',
+                                    WebkitBackdropFilter: isMe ? 'none' : 'blur(25px)'
                                 }}>
                                     {msg.content}
 
@@ -203,8 +220,8 @@ const Chat = ({ user, activeRoom: propActiveRoom, onLeaveRoom }) => {
             </main>
 
             {/* Input Footer */}
-            <footer style={{ position: 'relative', zIndex: 10, padding: '1.5rem 10% 2.5rem', background: 'var(--bg-base)' }}>
-                <div style={{ background: 'var(--glass-bg)', backdropFilter: 'blur(25px)', border: '1px solid var(--glass-border)', borderRadius: '50px', display: 'flex', alignItems: 'center', padding: '6px 6px 6px 24px', maxWidth: '900px', margin: '0 auto', transition: 'all 0.3s ease', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            <footer style={{ position: 'relative', zIndex: 10, padding: '1.5rem 10% 2.5rem', background: 'transparent' }}>
+                <div style={{ background: 'rgba(13, 17, 23, 0.15)', backdropFilter: 'blur(35px)', WebkitBackdropFilter: 'blur(35px)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '50px', display: 'flex', alignItems: 'center', padding: '6px 6px 6px 24px', maxWidth: '900px', margin: '0 auto', transition: 'all 0.3s ease', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
                     <input
                         type="text"
                         placeholder="Type a secure message..."

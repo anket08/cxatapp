@@ -23,20 +23,29 @@ const Navbar = ({ user, onLogout }) => {
             className="global-navbar"
         >
             <div className="navbar-container">
-                <div className="nav-brand" onClick={() => navigate('/lobby')}>
+                <div
+                    className="nav-brand"
+                    onClick={() => navigate('/lobby')}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                >
                     <motion.div
-                        initial={{ scale: 1 }}
                         animate={{
-                            rotate: [0, -10, 10, -10, 10, 0],
-                            scale: [1, 1.1, 1, 1.1, 1]
+                            filter: [
+                                "drop-shadow(0px 0px 0px rgba(0,255,255,0))",
+                                "drop-shadow(2px 0px 0px rgba(0,255,255,0.8)) drop-shadow(-2px 0px 0px rgba(255,0,255,0.8))",
+                                "drop-shadow(-2px 0px 0px rgba(0,255,255,0.8)) drop-shadow(2px 0px 0px rgba(255,0,255,0.8))",
+                                "drop-shadow(3px -1px 0px rgba(0,255,255,0.8)) drop-shadow(-3px 1px 0px rgba(255,0,255,0.8))",
+                                "drop-shadow(0px 0px 0px rgba(0,255,255,0))"
+                            ]
                         }}
                         transition={{
-                            duration: 2,
+                            duration: 0.2,
                             repeat: Infinity,
-                            repeatDelay: 3
+                            repeatType: "mirror",
+                            repeatDelay: Math.random() * 2 + 1 // random delay between 1-3 seconds
                         }}
-                        style={{ background: '#d97736', color: '#000', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <PawPrint size={20} />
+                    >
+                        <PawPrint size={24} color="#79c0ff" />
                     </motion.div>
                     <span className="nav-title">cXat</span>
                 </div>
